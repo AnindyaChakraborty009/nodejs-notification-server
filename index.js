@@ -1,21 +1,18 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const serviceAccount = require('./whisperly-80933-firebase-adminsdk-fbsvc-c296a356b1.json');
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
 const app = express();
-app.use(express.json()); // for parsing application/json
+app.use(express.json());
 
-// Your existing notification function
 async function sendNotification(fcmToken, senderName, messageText) {
   const message = {
-    notification: {
-      title: senderName,
-      body: messageText,
-    },
+    notification: { title: senderName, body: messageText },
     token: fcmToken,
   };
 
@@ -29,16 +26,12 @@ async function sendNotification(fcmToken, senderName, messageText) {
   }
 }
 
-// ✅ Expose an HTTP endpoint
 app.post('/send-notification', async (req, res) => {
   const { fcmToken, senderName, messageText } = req.body;
-
   if (!fcmToken || !senderName || !messageText) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-
   const result = await sendNotification(fcmToken, senderName, messageText);
-
   if (result.success) {
     res.status(200).json({ message: 'Notification sent successfully' });
   } else {
@@ -46,7 +39,6 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
-// ✅ Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
